@@ -8,13 +8,28 @@
   <title>جمجم | مغامرة المعرفة</title>
   <link rel="stylesheet" href="/assets/css/app.css">
   <script src="/assets/js/app.js" defer></script>
+  <style> .brand-logo {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+} </style>
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
       <a class="brand" href="/" aria-label="جمجم - الرئيسية">
-        <span class="brand-mark" aria-hidden="true">ج</span>
-        <span>جَمْجَم</span>
+        <img class="brand-logo" src="https://i.servimg.com/u/f54/18/11/62/61/picsar13.png" alt="شعار جمجم" width="48" height="48" loading="eager">
+        <span>جُمْجُم</span>
       </a>
       <span class="status" id="connection-status">جارٍ التحقق من الاتصال…</span>
     </header>
