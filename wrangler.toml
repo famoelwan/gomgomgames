@@ -1,0 +1,9 @@
+name = "jumjum-v5"
+compatibility_date = "2026-11-11"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "jumjum"
+database_id = "8f6841a6-9548-4302-89db-47599721c192"
+migrations_dir = "migrations"
