@@ -26,8 +26,8 @@ Updated: 11 November 2026
 - Workflow: `.github/workflows/d1-migrate.yml`.
 - Trigger it manually from GitHub Actions after adding the repository Actions secret `CLOUDFLARE_API_TOKEN` and repository Actions variable `CLOUDFLARE_ACCOUNT_ID`.
 - The token should have only the permissions needed to read the target D1 database and apply D1 migrations for this account. Do not put token values in chat, source files, or commit history.
-- The workflow runs `wrangler d1 migrations apply jumjumgames --remote` against the existing database ID configured in `wrangler.toml`.
-- Verify the workflow log reports both migrations as applied/already applied, then query D1 for 36 categories and 15 settings. If the migration log shows an unexpected database/account, stop and do not retry.
+- The workflow runs `wrangler d1 migrations apply jumjumgames --remote` against the existing database ID configured in `wrangler.toml`, then automatically queries the category total, audience distribution, and settings total.
+- Expected results: 36 categories (12 `general`, 8 `babys`, 8 `kids`, 8 `juniors`) and 15 settings. If the migration log shows an unexpected database/account or the counts differ, stop and investigate before retrying.
 
 ## Other services
 - Supabase is designated for authentication, player profiles, progress, sensitive player records, and protected roles. Its project/schema/RLS setup is not yet verified from this repository.
