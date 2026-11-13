@@ -1,6 +1,6 @@
 # Jumjum V5 — Database Setup Status
 
-Updated: 11 November 2026
+Updated: 13 November 2026
 
 ## Confirmed infrastructure
 - Git repository: `famoelwan/gomgomgames`, branch `main`.
@@ -20,7 +20,7 @@ Updated: 11 November 2026
 ## D1 migration
 - `0001_core.sql`: core tables.
 - `0002_seed_catalog_and_settings.sql`: idempotent category and approved settings seed.
-- Applying a migration to Git does not itself apply it to the live D1 database. The D1 migration must be applied to the existing production database through Wrangler or the Cloudflare D1 console, then verified with counts.
+- Applied successfully to the existing remote D1 database on 13 November 2026 through GitHub Actions run `43343462323` (commit `91b7c7f316c876d08cfe2b945a35ba966298517e`). Both `0001_core.sql` and `0002_seed_catalog_and_settings.sql` completed successfully. Remote verification returned 36 categories (12 `general`, 8 `babys`, 8 `kids`, 8 `juniors`) and 15 settings. The 8,080 stage-question schedule remains unseeded, and no question content was inserted.
 
 ## Applying D1 migrations through GitHub Actions
 - Workflow: `.github/workflows/d1-migrate.yml`.
@@ -30,6 +30,6 @@ Updated: 11 November 2026
 - Expected results: 36 categories (12 `general`, 8 `babys`, 8 `kids`, 8 `juniors`) and 15 settings. If the migration log shows an unexpected database/account or the counts differ, stop and investigate before retrying.
 
 ## Other services
-- Supabase is designated for authentication, player profiles, progress, sensitive player records, and protected roles. Its project/schema/RLS setup is not yet verified from this repository.
+- Supabase is designated for authentication, player profiles, progress, sensitive player records, and protected roles. The initial schema/RLS migration is prepared at `supabase/migrations/202611130001_initial_core.sql`, with instructions at `docs/SUPABASE_SETUP.md`. It has NOT yet been applied to a live Supabase project or verified.
 - Firebase is designated for published question content and explanations. Project/database rules and server-only service access are not yet verified.
 - Never commit service keys or place them in browser code. Store credentials only in server-side secret settings.
