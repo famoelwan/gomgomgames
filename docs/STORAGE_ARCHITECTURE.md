@@ -35,7 +35,7 @@ Do not add the 5 GB D1 and 5 GB Turso quotas together as if they were one databa
 ## Security architecture
 
 1. Browser calls Cloudflare Pages Functions only; it never connects directly to D1 or Turso.
-2. Verify Firebase ID token server-side (signature, issuer, audience, expiry, subject).
+2. Verify Firebase ID token server-side (RS256 signature, issuer, audience, expiry, issue time and subject) using Google's Secure Token signing keys.
 3. Derive Firebase UID only from the verified token; never trust a client-supplied UID.
 4. Check owner authorization in every query/mutation. Turso does not provide Supabase-style RLS, so authorization must be enforced in server code and tested.
 5. Scoring, stars, hearts, rewards, age transitions, parental consent writes, admin roles and protected age records are server-authoritative.
@@ -54,7 +54,8 @@ Do not add the 5 GB D1 and 5 GB Turso quotas together as if they were one databa
 
 - D1 migrations 0001 and 0002 are applied and verified.
 - Player/family migration `turso/migrations/0001_player_family_progress.sql` was applied by the user to Turso database `JUMJUMGAMES`; the user verified all 12 expected tables with `sqlite_master`.
-- The user reports setting `TURSO_URL` and `TURSO_AUTH_TOKEN` in Cloudflare Pages. A read-only `/api/turso-health` probe is committed; deployment and a successful live probe are still pending verification.
-- Firebase Authentication token verification and authenticated player APIs are not yet implemented/verified.
+- The user reports setting `TURSO_URL` and `TURSO_AUTH_TOKEN` in Cloudflare Pages. The user confirmed `/api/turso-health` returns `turso: connected`.
+- Firebase project ID is `jumjum-53571`. Server-side token verification is implemented in `functions/_shared/firebase-auth.js`; `GET /api/me` is implemented to provision/read only the authenticated player's basic profile.
+- Cloudflare Pages still needs the non-secret `FIREBASE_PROJECT_ID=jumjum-53571` variable configured, followed by a deployed authenticated integration test.
 - No question content or 8,080-stage schedule is seeded by the player migration.
 - R2 is not used in this architecture.
