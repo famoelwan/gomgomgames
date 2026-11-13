@@ -27,8 +27,10 @@ Updated: 13 November 2026
 - Schema prepared at `turso/migrations/0001_player_family_progress.sql`.
 - User created the Turso database `JUMJUMGAMES` and confirmed all 12 expected tables exist after applying the migration.
 - User reports adding `TURSO_URL` and `TURSO_AUTH_TOKEN` to Cloudflare Pages variables/secrets; values have not been inspected (and must not be shared).
-- A read-only Pages Function probe is committed at `functions/api/turso-health.js`; it checks `SELECT 1` without exposing secrets or database details. It must be deployed and tested at `/api/turso-health` before marking connectivity verified.
-- Firebase ID-token verification and authenticated player APIs are not yet implemented or verified.
+- The user confirmed `/api/turso-health` returns `{ ok: true, service: "jumjum-api", turso: "connected" }`; Cloudflare Pages can successfully execute `SELECT 1` against Turso.
+- Firebase project ID supplied: `jumjum-53571`.
+- Firebase ID-token verification is implemented in `functions/_shared/firebase-auth.js`; authenticated `GET /api/me` is implemented in `functions/api/me.js` and provisions/returns only the signed-in player's own basic profile.
+- Add `FIREBASE_PROJECT_ID=jumjum-53571` as a Cloudflare Pages environment variable (Production and Preview as applicable), then deploy and test `/api/me` from the signed-in application. Do not paste ID tokens into chat.
 - Do not place Turso auth tokens in Git, browser code, screenshots or chat. Store them only as Cloudflare server-side secrets.
 
 ## Supabase disposition
