@@ -280,8 +280,8 @@ with check (
       and fg.owner_user_id = (select auth.uid())
   )
 );
-grant select, insert on public.child_profiles to authenticated;
-grant insert (family_group_id, owner_user_id, display_name, age_band) on public.child_profiles to authenticated;
+grant select on public.child_profiles to authenticated;
+-- Child creation and age-band assignment are performed by trusted server code.
 grant update (display_name, is_active) on public.child_profiles to authenticated;
 
 -- Parent-managed settings are limited to children owned by the current parent.
