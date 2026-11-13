@@ -53,8 +53,8 @@ Do not add the 5 GB D1 and 5 GB Turso quotas together as if they were one databa
 ## Migrations and status
 
 - D1 migrations 0001 and 0002 are applied and verified.
-- Player/family migration is now `turso/migrations/0001_player_family_progress.sql`; it is prepared but not yet applied to a live Turso database.
-- Turso database, token secret, Cloudflare binding/integration and server-side adapter are not yet configured.
-- Firebase Authentication token verification is not yet implemented/verified.
+- Player/family migration `turso/migrations/0001_player_family_progress.sql` was applied by the user to Turso database `JUMJUMGAMES`; the user verified all 12 expected tables with `sqlite_master`.
+- The user reports setting `TURSO_URL` and `TURSO_AUTH_TOKEN` in Cloudflare Pages. A read-only `/api/turso-health` probe is committed; deployment and a successful live probe are still pending verification.
+- Firebase Authentication token verification and authenticated player APIs are not yet implemented/verified.
 - No question content or 8,080-stage schedule is seeded by the player migration.
 - R2 is not used in this architecture.
