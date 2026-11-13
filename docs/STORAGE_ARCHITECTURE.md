@@ -57,7 +57,7 @@ Firebase Authentication is used for account identity only. Do not enable the Ide
 
 ## Capacity and scale
 
-The Free plan is suitable for prototyping, not a promise of unlimited production capacity. D1's Free daily query/write quotas may be reached before its 5 GB storage fills. Monitor rows read/written, storage, R2 operations, bandwidth and error rates.
+The Free plan is suitable for prototyping, not a promise of unlimited production capacity. D1's per-database Free cap is 500 MB, even though the account-wide allowance is 5 GB across up to 10 databases. Its daily query/write quotas may be reached before storage fills. Monitor rows read/written, storage, R2 operations, bandwidth and error rates.
 
 Published D1 paid storage is $0.75 per GB-month above the included 5 GB account allowance; paid per-database maximum is 10 GB. R2 Standard storage is $0.015 per GB-month above its included 10 GB-month, with no egress fee. Re-check official pricing before enabling billing because rates and quotas can change.
 
