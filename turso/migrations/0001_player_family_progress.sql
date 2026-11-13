@@ -53,7 +53,10 @@ CREATE TABLE IF NOT EXISTS protected_age_records (
   verification_method TEXT,
   verified_at TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CHECK ((player_firebase_uid IS NOT NULL) <> (child_profile_id IS NOT NULL))
+  CHECK ((player_firebase_uid IS NOT NULL) <> (child_profile_id IS NOT NULL)),
+  CHECK (player_firebase_uid IS NULL OR player_firebase_uid = owner_firebase_uid),
+  FOREIGN KEY (child_profile_id, owner_firebase_uid)
+    REFERENCES child_profiles(id, owner_firebase_uid) ON DELETE RESTRICT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_protected_age_adult_unique
   ON protected_age_records(player_firebase_uid) WHERE player_firebase_uid IS NOT NULL;
@@ -65,7 +68,9 @@ CREATE TABLE IF NOT EXISTS parental_settings (
   owner_firebase_uid TEXT NOT NULL REFERENCES player_profiles(firebase_uid) ON DELETE CASCADE,
   allow_real_world_tasks INTEGER NOT NULL DEFAULT 0 CHECK (allow_real_world_tasks IN (0,1)),
   allow_competitions INTEGER NOT NULL DEFAULT 0 CHECK (allow_competitions IN (0,1)),
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (child_profile_id, owner_firebase_uid)
+    REFERENCES child_profiles(id, owner_firebase_uid) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS parent_consents (
@@ -76,7 +81,9 @@ CREATE TABLE IF NOT EXISTS parent_consents (
   consent_version TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('granted','withdrawn','pending')),
   recorded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  metadata_json TEXT NOT NULL DEFAULT '{}'
+  metadata_json TEXT NOT NULL DEFAULT '{}',
+  FOREIGN KEY (child_profile_id, owner_firebase_uid)
+    REFERENCES child_profiles(id, owner_firebase_uid) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_parent_consents_owner
   ON parent_consents(owner_firebase_uid, recorded_at DESC);
@@ -91,7 +98,10 @@ CREATE TABLE IF NOT EXISTS player_progress (
   achievement_points INTEGER NOT NULL DEFAULT 0 CHECK (achievement_points >= 0),
   hearts REAL NOT NULL DEFAULT 0 CHECK (hearts >= 0),
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CHECK ((player_firebase_uid IS NOT NULL) <> (child_profile_id IS NOT NULL))
+  CHECK ((player_firebase_uid IS NOT NULL) <> (child_profile_id IS NOT NULL)),
+  CHECK (player_firebase_uid IS NULL OR player_firebase_uid = owner_firebase_uid),
+  FOREIGN KEY (child_profile_id, owner_firebase_uid)
+    REFERENCES child_profiles(id, owner_firebase_uid) ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_player_progress_adult_unique
   ON player_progress(player_firebase_uid) WHERE player_firebase_uid IS NOT NULL;
@@ -146,7 +156,9 @@ CREATE TABLE IF NOT EXISTS parent_device_links (
   child_profile_id TEXT NOT NULL REFERENCES child_profiles(id) ON DELETE CASCADE,
   device_label TEXT,
   linked_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  revoked_at TEXT
+  revoked_at TEXT,
+  FOREIGN KEY (child_profile_id, owner_firebase_uid)
+    REFERENCES child_profiles(id, owner_firebase_uid) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_parent_device_links_owner
   ON parent_device_links(owner_firebase_uid, child_profile_id);
