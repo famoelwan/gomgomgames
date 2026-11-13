@@ -24,7 +24,7 @@ Updated: 11 November 2026
 
 ## Applying D1 migrations through GitHub Actions
 - Workflow: `.github/workflows/d1-migrate.yml`.
-- Trigger it manually from GitHub Actions after adding repository Actions secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
+- Trigger it manually from GitHub Actions after adding the repository Actions secret `CLOUDFLARE_API_TOKEN` and repository Actions variable `CLOUDFLARE_ACCOUNT_ID`.
 - The token should have only the permissions needed to read the target D1 database and apply D1 migrations for this account. Do not put token values in chat, source files, or commit history.
 - The workflow runs `wrangler d1 migrations apply jumjumgames --remote` against the existing database ID configured in `wrangler.toml`.
 - Verify the workflow log reports both migrations as applied/already applied, then query D1 for 36 categories and 15 settings. If the migration log shows an unexpected database/account, stop and do not retry.
