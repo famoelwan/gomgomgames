@@ -42,3 +42,10 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: d1 execute jumjumgames --remote --command "SELECT COUNT(*) AS total_settings FROM game_settings;"
+
+      - name: Verify player and family schema
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 execute jumjumgames --remote --command "SELECT COUNT(*) AS player_schema_tables FROM sqlite_master WHERE type = 'table' AND name IN ('player_profiles','adult_player_profiles','family_groups','child_profiles','protected_age_records','parental_settings','parent_consents','player_progress','stage_results','reward_ledger','admin_roles','parent_device_links');"
