@@ -11,7 +11,7 @@ Updated: 13 November 2026
 - Wrangler migration directory: `migrations`.
 
 ## Selected architecture
-- Supabase is **superseded and not used**. Its prepared SQL migration was never applied to a live Supabase project.
+- Supabase is **superseded for the new architecture**. The user reported successful execution of the initial SQL migration in Supabase SQL Editor (`Success. No rows returned`), but the resulting tables/RLS were not independently verified. Do not delete the Supabase project or tables until checking whether any live data/dependency exists.
 - Cloudflare D1 stores player data, game state, question IDs, category/age metadata and anti-repeat indexes. Free limit: 500 MB per database, up to 10 databases and 5 GB total per account.
 - Cloudflare R2 Standard is selected for question text/answers/explanations as versioned JSON/NDJSON shards, plus images/audio/files; private by default. Free allowance: 10 GB-month.
 - Firebase Authentication is selected for sign-in/identity only. Do not enable Identity Platform upgrade without reviewing its separate limits and pricing.
@@ -30,6 +30,7 @@ Updated: 13 November 2026
 - Both migrations were applied successfully to the remote D1 database on 13 November 2026 through GitHub Actions run `43343462323`. Verification returned 36 categories (12 general, 8 babys, 8 kids, 8 juniors) and 15 settings.
 - `0003_player_family_progress.sql`: prepared to add Firebase-UID keyed player profiles, family/child records, protected age records, parental settings/consents, progress, stage results, rewards, admin roles and device links. **Not yet applied.**
 - The 8,080 stage-question schedule remains unseeded. No question content has been inserted.
+- The previous Supabase SQL migration may have created 12 tables in the user's live Supabase project. Its actual state is unknown until the user verifies it; it has been removed from the active GitHub repository because the target architecture has changed.
 
 ## D1 migration workflow
 - Workflow: `.github/workflows/d1-migrate.yml`.
