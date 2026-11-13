@@ -3,52 +3,38 @@
 Updated: 13 November 2026
 
 ## Confirmed infrastructure
-- Git repository: `famoelwan/gomgomgames`, branch `main`.
-- Hosting target: Cloudflare Pages.
-- D1 database: `jumjumgames`.
-- D1 database ID: `8f6841a6-9548-4302-89db-47599721c192`.
+- Repository: `famoelwan/gomgomgames`, branch `main`.
+- Hosting: Cloudflare Pages.
+- Existing D1 database: `jumjumgames`.
+- D1 ID: `8f6841a6-9548-4302-89db-47599721c192`.
 - Pages D1 binding: `DB`.
-- Wrangler migration directory: `migrations`.
 
 ## Selected architecture
-- Supabase is **superseded for the new architecture**. The user reported successful execution of the initial SQL migration in Supabase SQL Editor (`Success. No rows returned`), but the resulting tables/RLS were not independently verified. Do not delete the Supabase project or tables until checking whether any live data/dependency exists.
-- Cloudflare D1 stores player data, game state, question IDs, category/age metadata and anti-repeat indexes. Free limit: 500 MB per database, up to 10 databases and 5 GB total per account.
-- Cloudflare R2 Standard is selected for question text/answers/explanations as versioned JSON/NDJSON shards, plus images/audio/files; private by default. Free allowance: 10 GB-month.
-- Firebase Authentication is selected for sign-in/identity only. Do not enable Identity Platform upgrade without reviewing its separate limits and pricing.
-- D1 and R2 have distinct quotas and cannot be treated as one combined database.
+- Cloudflare D1 remains for existing game categories, settings, stage configuration and operational data.
+- Turso Free replaces Supabase for player, family, child, progress and protected account records.
+- Firebase Authentication is for sign-in/identity only. Server-side Pages Functions verify Firebase ID tokens before database access.
+- Servimg and FAMO-PIC are temporary external image hosts; database stores image URLs/metadata only.
+- Cloudflare R2 is not used because it requires a payment card in the user's current setup.
+
+## Confirmed D1 state
+- Migrations 0001 and 0002 applied successfully via GitHub Actions run `43343462323`.
+- 36 categories verified (12 general, 8 babys, 8 kids, 8 juniors).
+- 15 game settings verified.
+- D1 Free allowance is 5 GB total per account, up to 10 databases, with a 500 MB maximum per database.
+
+## Turso status
+- Free plan currently lists 5 GB storage, 100 databases, 500 million rows read/month and 10 million rows written/month; no credit card required to start.
+- Schema prepared at `turso/migrations/0001_player_family_progress.sql`.
+- Turso database and credentials are not yet created/configured.
+- Do not place Turso auth tokens in Git, browser code, screenshots or chat. Store them only as Cloudflare server-side secrets.
+
+## Supabase disposition
+- User reported Supabase SQL Editor returned `Success. No rows returned`; it may have created the 12 planned tables.
+- Supabase tables/RLS were not independently verified.
+- Supabase files were removed from current Git tree prematurely; this was an implementation mistake. They remain recoverable from Git history.
+- Do not delete the Supabase project or tables until confirming no data/dependency exists and exporting anything needed.
 
 ## Product data decisions
-- Launch question bank target: 76,000 total (60,000 adult/13+, 16,000 children).
-- The 500-question discrepancy is reserved within the launch bank; it is not added to the adventure-stage schedule.
-- Adventure mode has 200 stages. The currently recorded stage distribution sums to 8,080 operational questions. Final stage rows remain unseeded pending review.
-- All eight child categories are available to Babys (3–5), Kids (6–8), and Juniors (9–12), with separate age-specific question banks.
-- No question content is inserted by migrations 0001–0003. The approved question payloads will be stored as R2 objects; D1 keeps the searchable metadata and IDs.
-
-## D1 migrations
-- `0001_core.sql`: core category, settings, stage and audit tables.
-- `0002_seed_catalog_and_settings.sql`: idempotent category and approved settings seed.
-- Both migrations were applied successfully to the remote D1 database on 13 November 2026 through GitHub Actions run `43343462323`. Verification returned 36 categories (12 general, 8 babys, 8 kids, 8 juniors) and 15 settings.
-- `0003_player_family_progress.sql`: prepared to add Firebase-UID keyed player profiles, family/child records, protected age records, parental settings/consents, progress, stage results, rewards, admin roles and device links. **Not yet applied.**
-- The 8,080 stage-question schedule remains unseeded. No question content has been inserted.
-- The previous Supabase SQL migration may have created 12 tables in the user's live Supabase project. Its actual state is unknown until the user verifies it; it has been removed from the active GitHub repository because the target architecture has changed.
-
-## D1 migration workflow
-- Workflow: `.github/workflows/d1-migrate.yml`.
-- Trigger it manually from GitHub Actions.
-- It uses the repository Actions secret `CLOUDFLARE_API_TOKEN` and variable `CLOUDFLARE_ACCOUNT_ID`.
-- Never paste token values into chat, source files, screenshots or commit history.
-
-## R2 status
-- R2 Standard currently lists 10 GB-month storage, 1 million Class A operations and 10 million Class B operations per month at no charge. D1 Free is 500 MB per database, 10 databases and 5 GB total across the account.
-- Bucket and Pages binding are **not yet created**.
-- Follow `docs/R2_SETUP.md` after migration 0003 has been verified.
-
-## Firebase status
-- Firebase is used for Authentication only in the selected design; Firestore is not selected for question storage.
-- Firebase Authentication configuration and server-side ID-token verification are **not yet implemented or verified**.
-- Do not use client-supplied UID as identity. Do not expose D1 directly to the browser.
-
-## Security and deployment notes
-- All D1 access must go through Pages Functions.
-- Scoring, hearts, stars, rewards, age transitions, consent writes, admin roles and protected age records remain server-authoritative.
-- Never commit service keys or place them in browser code. Store credentials only in server-side secret settings.
+- Launch question bank target: 76,000 (60,000 adult/13+, 16,000 children).
+- 200 Adventure stages; operational stage distribution sums to 8,080 questions. Stage rows remain unseeded pending review.
+- No question content is inserted by migrations 0001/0002 or the Turso player schema.
