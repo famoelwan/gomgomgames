@@ -12,8 +12,8 @@ Updated: 13 November 2026
 
 ## Selected architecture
 - Supabase is **superseded and not used**. Its prepared SQL migration was never applied to a live Supabase project.
-- Cloudflare D1 is the only structured game/player database.
-- Cloudflare R2 Standard is selected for binary assets (images/audio/files), private by default.
+- Cloudflare D1 stores player data, game state, question IDs, category/age metadata and anti-repeat indexes. Free limit: 500 MB per database, up to 10 databases and 5 GB total per account.
+- Cloudflare R2 Standard is selected for question text/answers/explanations as versioned JSON/NDJSON shards, plus images/audio/files; private by default. Free allowance: 10 GB-month.
 - Firebase Authentication is selected for sign-in/identity only. Do not enable Identity Platform upgrade without reviewing its separate limits and pricing.
 - D1 and R2 have distinct quotas and cannot be treated as one combined database.
 
@@ -22,7 +22,7 @@ Updated: 13 November 2026
 - The 500-question discrepancy is reserved within the launch bank; it is not added to the adventure-stage schedule.
 - Adventure mode has 200 stages. The currently recorded stage distribution sums to 8,080 operational questions. Final stage rows remain unseeded pending review.
 - All eight child categories are available to Babys (3–5), Kids (6–8), and Juniors (9–12), with separate age-specific question banks.
-- No question content is inserted by migrations 0001–0003.
+- No question content is inserted by migrations 0001–0003. The approved question payloads will be stored as R2 objects; D1 keeps the searchable metadata and IDs.
 
 ## D1 migrations
 - `0001_core.sql`: core category, settings, stage and audit tables.
@@ -38,12 +38,12 @@ Updated: 13 November 2026
 - Never paste token values into chat, source files, screenshots or commit history.
 
 ## R2 status
-- R2 Standard currently lists 10 GB-month storage, 1 million Class A operations and 10 million Class B operations per month at no charge.
+- R2 Standard currently lists 10 GB-month storage, 1 million Class A operations and 10 million Class B operations per month at no charge. D1 Free is 500 MB per database, 10 databases and 5 GB total across the account.
 - Bucket and Pages binding are **not yet created**.
 - Follow `docs/R2_SETUP.md` after migration 0003 has been verified.
 
 ## Firebase status
-- Firebase is used for Authentication only in the selected design.
+- Firebase is used for Authentication only in the selected design; Firestore is not selected for question storage.
 - Firebase Authentication configuration and server-side ID-token verification are **not yet implemented or verified**.
 - Do not use client-supplied UID as identity. Do not expose D1 directly to the browser.
 
