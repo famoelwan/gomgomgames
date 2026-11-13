@@ -25,7 +25,10 @@ Updated: 13 November 2026
 ## Turso status
 - Free plan currently lists 5 GB storage, 100 databases, 500 million rows read/month and 10 million rows written/month; no credit card required to start.
 - Schema prepared at `turso/migrations/0001_player_family_progress.sql`.
-- Turso database and credentials are not yet created/configured.
+- User created the Turso database `JUMJUMGAMES` and confirmed all 12 expected tables exist after applying the migration.
+- User reports adding `TURSO_URL` and `TURSO_AUTH_TOKEN` to Cloudflare Pages variables/secrets; values have not been inspected (and must not be shared).
+- A read-only Pages Function probe is committed at `functions/api/turso-health.js`; it checks `SELECT 1` without exposing secrets or database details. It must be deployed and tested at `/api/turso-health` before marking connectivity verified.
+- Firebase ID-token verification and authenticated player APIs are not yet implemented or verified.
 - Do not place Turso auth tokens in Git, browser code, screenshots or chat. Store them only as Cloudflare server-side secrets.
 
 ## Supabase disposition
