@@ -10,26 +10,44 @@ Updated: 13 November 2026
 - Pages D1 binding: `DB`.
 - Wrangler migration directory: `migrations`.
 
-## Data model decisions
+## Selected architecture
+- Supabase is **superseded and not used**. Its prepared SQL migration was never applied to a live Supabase project.
+- Cloudflare D1 is the only structured game/player database.
+- Cloudflare R2 Standard is selected for binary assets (images/audio/files), private by default.
+- Firebase Authentication is selected for sign-in/identity only. Do not enable Identity Platform upgrade without reviewing its separate limits and pricing.
+- D1 and R2 have distinct quotas and cannot be treated as one combined database.
+
+## Product data decisions
 - Launch question bank target: 76,000 total (60,000 adult/13+, 16,000 children).
-- The 500-question discrepancy is reserved within the launch bank for additional/replacement/approval-ready bank content; it is not added to the adventure-stage schedule.
-- Adventure mode has 200 stages. The currently recorded stage distribution sums to 8,080 operational questions. Final stage rows remain unseeded pending review of the detailed stage and heart-reward schedule.
-- All eight child categories are available to Babys (3–5), Kids (6–8), and Juniors (9–12), with separate age-specific question banks and age-adapted content. No question is reused across age banks.
-- No question content is generated or inserted by the database setup migration.
+- The 500-question discrepancy is reserved within the launch bank; it is not added to the adventure-stage schedule.
+- Adventure mode has 200 stages. The currently recorded stage distribution sums to 8,080 operational questions. Final stage rows remain unseeded pending review.
+- All eight child categories are available to Babys (3–5), Kids (6–8), and Juniors (9–12), with separate age-specific question banks.
+- No question content is inserted by migrations 0001–0003.
 
-## D1 migration
-- `0001_core.sql`: core tables.
+## D1 migrations
+- `0001_core.sql`: core category, settings, stage and audit tables.
 - `0002_seed_catalog_and_settings.sql`: idempotent category and approved settings seed.
-- Applied successfully to the existing remote D1 database on 13 November 2026 through GitHub Actions run `43343462323` (commit `91b7c7f316c876d08cfe2b945a35ba966298517e`). Both `0001_core.sql` and `0002_seed_catalog_and_settings.sql` completed successfully. Remote verification returned 36 categories (12 `general`, 8 `babys`, 8 `kids`, 8 `juniors`) and 15 settings. The 8,080 stage-question schedule remains unseeded, and no question content was inserted.
+- Both migrations were applied successfully to the remote D1 database on 13 November 2026 through GitHub Actions run `43343462323`. Verification returned 36 categories (12 general, 8 babys, 8 kids, 8 juniors) and 15 settings.
+- `0003_player_family_progress.sql`: prepared to add Firebase-UID keyed player profiles, family/child records, protected age records, parental settings/consents, progress, stage results, rewards, admin roles and device links. **Not yet applied.**
+- The 8,080 stage-question schedule remains unseeded. No question content has been inserted.
 
-## Applying D1 migrations through GitHub Actions
+## D1 migration workflow
 - Workflow: `.github/workflows/d1-migrate.yml`.
-- Trigger it manually from GitHub Actions after adding the repository Actions secret `CLOUDFLARE_API_TOKEN` and repository Actions variable `CLOUDFLARE_ACCOUNT_ID`.
-- The token should have only the permissions needed to read the target D1 database and apply D1 migrations for this account. Do not put token values in chat, source files, or commit history.
-- The workflow runs `wrangler d1 migrations apply jumjumgames --remote` against the existing database ID configured in `wrangler.toml`, then automatically queries the category total, audience distribution, and settings total.
-- Expected results: 36 categories (12 `general`, 8 `babys`, 8 `kids`, 8 `juniors`) and 15 settings. If the migration log shows an unexpected database/account or the counts differ, stop and investigate before retrying.
+- Trigger it manually from GitHub Actions.
+- It uses the repository Actions secret `CLOUDFLARE_API_TOKEN` and variable `CLOUDFLARE_ACCOUNT_ID`.
+- Never paste token values into chat, source files, screenshots or commit history.
 
-## Other services
-- Supabase is designated for authentication, player profiles, progress, sensitive player records, and protected roles. The initial schema/RLS migration is prepared at `supabase/migrations/202611130001_initial_core.sql`, with instructions at `docs/SUPABASE_SETUP.md`. It has NOT yet been applied to a live Supabase project or verified.
-- Firebase is designated for published question content and explanations. Project/database rules and server-only service access are not yet verified.
+## R2 status
+- R2 Standard currently lists 10 GB-month storage, 1 million Class A operations and 10 million Class B operations per month at no charge.
+- Bucket and Pages binding are **not yet created**.
+- Follow `docs/R2_SETUP.md` after migration 0003 has been verified.
+
+## Firebase status
+- Firebase is used for Authentication only in the selected design.
+- Firebase Authentication configuration and server-side ID-token verification are **not yet implemented or verified**.
+- Do not use client-supplied UID as identity. Do not expose D1 directly to the browser.
+
+## Security and deployment notes
+- All D1 access must go through Pages Functions.
+- Scoring, hearts, stars, rewards, age transitions, consent writes, admin roles and protected age records remain server-authoritative.
 - Never commit service keys or place them in browser code. Store credentials only in server-side secret settings.
