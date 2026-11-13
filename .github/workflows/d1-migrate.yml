@@ -21,3 +21,24 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: d1 migrations apply jumjumgames --remote
+
+      - name: Verify category count
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 execute jumjumgames --remote --command "SELECT COUNT(*) AS total_categories FROM categories;"
+
+      - name: Verify category distribution by audience
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 execute jumjumgames --remote --command "SELECT audience, COUNT(*) AS category_count FROM categories GROUP BY audience ORDER BY audience;"
+
+      - name: Verify settings count
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: d1 execute jumjumgames --remote --command "SELECT COUNT(*) AS total_settings FROM game_settings;"
