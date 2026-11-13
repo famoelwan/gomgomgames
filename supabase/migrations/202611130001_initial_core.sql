@@ -27,9 +27,7 @@ create table if not exists public.family_groups (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (owner_user_id),
-  unique (id, owner_user_id),
-  foreign key (family_group_id, owner_user_id)
-    references public.family_groups(id, owner_user_id) on delete restrict
+  unique (id, owner_user_id)
 );
 
 create table if not exists public.child_profiles (
@@ -41,7 +39,9 @@ create table if not exists public.child_profiles (
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (id, owner_user_id)
+  unique (id, owner_user_id),
+  foreign key (family_group_id, owner_user_id)
+    references public.family_groups(id, owner_user_id) on delete restrict
 );
 
 create index if not exists child_profiles_owner_idx on public.child_profiles(owner_user_id);
