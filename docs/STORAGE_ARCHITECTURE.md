@@ -1,72 +1,60 @@
 # Jumjum V5 — Storage and backend architecture
 
-## Decision (13 November 2026)
+## Approved direction (13 November 2026)
 
-Supabase is **not part of the selected architecture**. Its initial migration was prepared but never applied to a live project. Do not run or rely on that migration.
+- Keep the existing Cloudflare Pages + Pages Functions hosting.
+- Keep Cloudflare D1 for the existing game catalog, categories, settings, stage configuration and operational data.
+- Use **Turso Free as the replacement for Supabase** for player profiles, adult profiles, family groups, child profiles, protected age records, parental settings/consents, player progress, stage results, reward ledger, admin roles and device links.
+- Use Firebase Authentication for sign-in/identity only. Cloudflare Pages Functions verify Firebase ID tokens before accessing Turso or D1.
+- Images are hosted externally for now through the user's existing Servimg and FAMO-PIC arrangements. Store only approved image URLs and metadata in the databases. Do not use Cloudflare R2; the user cannot provide the required payment card.
 
-### Selected services
+## Free-tier capacity (published pricing; verify before launch)
 
-| Responsibility | Service | Free allowance currently published |
-|---|---|---:|
-| Web hosting and API | Cloudflare Pages + Pages Functions | Existing project |
-| Structured player/game metadata | Cloudflare D1 | 5 GB total per account; 500 MB maximum per database on Free; up to 10 databases; 5 million rows read/day and 100,000 rows written/day |
-| Images, audio and other binary assets | Cloudflare R2 Standard | 10 GB-month; 1 million Class A and 10 million Class B operations/month |
-| Sign-in and identity | Firebase Authentication (base Firebase Auth, not Identity Platform upgrade) | Most sign-in methods no-cost; phone SMS is billed |
-| Published question text, answers and explanations | Private Cloudflare R2 JSON/NDJSON shards, delivered only through server APIs | Shares the 10 GB-month R2 object allowance |
-| Question media and large files | Private R2 bucket | Separate object-storage allowance |
+| Service | Free allowance | Role |
+|---|---:|---|
+| Cloudflare D1 | 5 GB total/account; up to 10 databases, each max 500 MB on Free | Existing game data/config |
+| Turso | 5 GB storage, up to 100 databases, 500 million rows read/month, 10 million rows written/month | Player and family data |
+| Servimg / FAMO-PIC | Depends on each provider/account and its current terms | Temporary image hosting |
 
-Official pricing references:
-- Cloudflare D1: https://developers.cloudflare.com/d1/platform/pricing/
-- Cloudflare R2: https://developers.cloudflare.com/r2/pricing/
-- Firebase: https://firebase.google.com/pricing/
+Turso explicitly advertises a Free plan with no credit card required. The published paid Developer plan is currently $5.99/month on monthly billing (or $4.99/month equivalent on yearly billing), with 9 GB included; usage and prices may change.
 
-D1 and R2 are different storage types. Do not describe them as one interchangeable 15 GB database: D1 stores relational rows; R2 stores objects/files. Current free limits are up to 5 GB total across the D1 account (but only 500 MB in each free D1 database, up to 10 databases) plus 10 GB-month of R2 Standard storage. This is up to 15 GB across two different services, not 15 GB in one database. Store the large question payloads as versioned R2 shards; keep player progress, question IDs, category/age metadata, reservation/anti-repeat state and indexes in D1.
+Official references:
+- Turso pricing: https://turso.tech/pricing
+- Cloudflare D1 limits: https://developers.cloudflare.com/d1/platform/limits/
+- Cloudflare Workers + Turso integration: https://developers.cloudflare.com/workers/databases/third-party-integrations/turso/
 
-## Why not Turso or Firestore for this migration?
+Do not add the 5 GB D1 and 5 GB Turso quotas together as if they were one database. They are separate services with separate limits. D1 Free has a 500 MB per-database ceiling even though the account total is 5 GB.
 
-Turso Free currently lists 5 GB of storage across its plan and up to 100 databases; D1 Free has 5 GB total across the account but a 500 MB cap per database. Turso could be reconsidered if a single relational database needs more than 500 MB, but it would add another provider and require a separate security/integration design. For now, the question bank is placed in R2 objects, so the current D1 database remains for relational metadata and player state. Firestore's free database quota is 1 GiB.
+## Supabase disposition
 
-## Supabase migration disposition
+- Supabase is no longer the target backend; Turso replaces it.
+- The user reported that the Supabase SQL Editor returned `Success. No rows returned`. The Supabase migration may therefore have created tables in the live project, but table/RLS verification was not completed.
+- Removing Supabase files from GitHub does not delete the live Supabase project or its tables. Do not delete the Supabase project/data until checking for records/dependencies and exporting anything needed.
+- The previous Supabase migration and setup guide remain recoverable from Git history; their removal from the current tree was premature.
 
-- The Supabase SQL migration was committed but not applied to a live project.
-- It is superseded by `migrations/0003_player_family_progress.sql`.
-- Do not apply the old Supabase migration.
-- No Supabase account, project, keys or credentials are required for the selected design.
+## Security architecture
 
-## Security model
+1. Browser calls Cloudflare Pages Functions only; it never connects directly to D1 or Turso.
+2. Verify Firebase ID token server-side (signature, issuer, audience, expiry, subject).
+3. Derive Firebase UID only from the verified token; never trust a client-supplied UID.
+4. Check owner authorization in every query/mutation. Turso does not provide Supabase-style RLS, so authorization must be enforced in server code and tested.
+5. Scoring, stars, hearts, rewards, age transitions, parental consent writes, admin roles and protected age records are server-authoritative.
+6. Never return exact birth dates, admin role internals or reward ledger internals to ordinary clients.
+7. Use prepared statements, strict validation, rate limits and audit events.
 
-D1 is not exposed directly to the browser. All reads and writes go through Cloudflare Pages Functions:
-1. Verify the Firebase ID token server-side (signature, issuer, audience, expiry and subject).
-2. Derive the Firebase UID from the verified token; never trust a UID supplied by the client.
-3. Apply owner checks in every query and mutation.
-4. Keep scoring, stars, hearts, rewards, age transitions, parental consent writes, admin roles and protected age records server-authoritative.
-5. Do not return exact birth dates, role tables, reward ledger rows or audit internals to ordinary clients.
-6. Use prepared SQL statements and strict request validation.
-7. Add rate limits and audit events to sensitive endpoints.
+## Images
 
-Firebase Authentication is used for account identity only. Do not enable the Identity Platform upgrade until its different quotas have been reviewed. Avoid phone/SMS sign-in in the initial release unless its costs are explicitly approved. The question bank is not stored in Firestore.
+- Keep Servimg and FAMO-PIC as temporary image hosts while they meet project needs and provider terms.
+- Store the image URL, provider, owner, category, dimensions and review state as metadata.
+- Do not put private child information or identity details in image URLs or filenames.
+- Keep a migration path so images can later move to another host without changing question records; use stable internal asset IDs and a URL mapping table.
+- Verify hotlinking, bandwidth, retention and terms for each host before public launch.
 
-## R2 security
+## Migrations and status
 
-- Create a private Standard bucket; do not enable public bucket access by default.
-- Bind the bucket to Pages Functions as `ASSETS`.
-- Browser uploads/downloads must pass through authorized endpoints or short-lived signed URLs.
-- Validate MIME type, file size, ownership and allowed asset paths on the server.
-- Never store credentials in source code or browser JavaScript.
-- Keep a metadata row in D1 for each managed asset; the binary itself belongs in R2.
-
-## Capacity and scale
-
-The Free plan is suitable for prototyping, not a promise of unlimited production capacity. D1's per-database Free cap is 500 MB, even though the account-wide allowance is 5 GB across up to 10 databases. Its daily query/write quotas may be reached before storage fills. Monitor rows read/written, storage, R2 operations, bandwidth and error rates.
-
-Published D1 paid storage is $0.75 per GB-month above the included 5 GB account allowance; paid per-database maximum is 10 GB. R2 Standard storage is $0.015 per GB-month above its included 10 GB-month, with no egress fee. Re-check official pricing before enabling billing because rates and quotas can change.
-
-## Migration and deployment status
-
-- Existing D1 core/catalog migrations 0001 and 0002 are already applied.
-- Migration 0003 is prepared and passed a local SQLite syntax/structure check, but **not yet applied to the remote D1 database**.
-- R2 bucket and binding are **not yet created**.
-- Firebase Authentication configuration and server token verification are **not yet implemented or verified**.
-- No question content or 8,080-stage schedule is inserted by this migration.
-
-Next: apply D1 migration 0003 through the existing GitHub Actions workflow, then verify table counts and constraints. Create the private R2 bucket and configure its binding, then upload question-bank shards and implement/test Firebase token verification before exposing player APIs.
+- D1 migrations 0001 and 0002 are applied and verified.
+- Player/family migration is now `turso/migrations/0001_player_family_progress.sql`; it is prepared but not yet applied to a live Turso database.
+- Turso database, token secret, Cloudflare binding/integration and server-side adapter are not yet configured.
+- Firebase Authentication token verification is not yet implemented/verified.
+- No question content or 8,080-stage schedule is seeded by the player migration.
+- R2 is not used in this architecture.
