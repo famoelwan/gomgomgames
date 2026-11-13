@@ -26,12 +26,15 @@ create table if not exists public.family_groups (
   family_name text not null default 'My Family' check (char_length(family_name) between 1 and 60),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (owner_user_id)
+  unique (owner_user_id),
+  unique (id, owner_user_id),
+  foreign key (family_group_id, owner_user_id)
+    references public.family_groups(id, owner_user_id) on delete restrict
 );
 
 create table if not exists public.child_profiles (
   id uuid primary key default gen_random_uuid(),
-  family_group_id uuid not null references public.family_groups(id) on delete cascade,
+  family_group_id uuid not null,
   owner_user_id uuid not null references auth.users(id) on delete cascade,
   display_name text not null check (char_length(display_name) between 1 and 40),
   age_band text not null check (age_band in ('babys','kids','juniors')),
@@ -50,12 +53,12 @@ create table if not exists public.protected_age_records (
   id uuid primary key default gen_random_uuid(),
   owner_user_id uuid not null references auth.users(id) on delete cascade,
   player_user_id uuid references auth.users(id) on delete cascade,
-  child_profile_id uuid references public.child_profiles(id) on delete cascade,
+  child_profile_id uuid references public.child_profiles(id) on delete restrict,
   birth_date date not null,
   verification_method text,
   verified_at timestamptz,
   created_at timestamptz not null default now(),
-  check ((player_user_id is not null)::integer + (child_profile_id is not null)::integer = 1)
+  check (num_nonnulls(player_user_id, child_profile_id) = 1)
 );
 
 create unique index if not exists protected_age_records_adult_unique
@@ -225,6 +228,10 @@ alter table public.reward_ledger enable row level security;
 alter table public.admin_roles enable row level security;
 alter table public.parent_device_links enable row level security;
 
+-- Remove any broad default API grants before adding narrowly scoped permissions.
+revoke all on all tables in schema public from anon, authenticated;
+grant usage on schema public to authenticated;
+
 -- Profiles: users may read their own profile and edit only safe presentation fields.
 drop policy if exists profiles_select_own on public.profiles;
 create policy profiles_select_own on public.profiles
@@ -251,7 +258,8 @@ create policy family_groups_owner_all on public.family_groups
 for all to authenticated
 using (owner_user_id = (select auth.uid()))
 with check (owner_user_id = (select auth.uid()));
-grant select, insert, update, delete on public.family_groups to authenticated;
+grant select, insert on public.family_groups to authenticated;
+grant update (family_name) on public.family_groups to authenticated;
 
 drop policy if exists child_profiles_owner_all on public.child_profiles;
 create policy child_profiles_owner_all on public.child_profiles
@@ -272,7 +280,9 @@ with check (
       and fg.owner_user_id = (select auth.uid())
   )
 );
-grant select, insert, update, delete on public.child_profiles to authenticated;
+grant select, insert on public.child_profiles to authenticated;
+grant insert (family_group_id, owner_user_id, display_name, age_band) on public.child_profiles to authenticated;
+grant update (display_name, is_active) on public.child_profiles to authenticated;
 
 -- Parent-managed settings are limited to children owned by the current parent.
 drop policy if exists parental_settings_owner_all on public.parental_settings;
@@ -294,7 +304,8 @@ with check (
       and cp.owner_user_id = (select auth.uid())
   )
 );
-grant select, insert, update, delete on public.parental_settings to authenticated;
+grant select, insert on public.parental_settings to authenticated;
+grant update (allow_real_world_tasks, allow_competitions) on public.parental_settings to authenticated;
 
 -- Parent may view consent history; consent creation/withdrawal must go through trusted server logic.
 drop policy if exists parent_consents_select_owner on public.parent_consents;
@@ -321,5 +332,8 @@ revoke all on public.parent_device_links from anon, authenticated;
 
 -- Child consent rows are visible only to their owning parent; writes remain server-only.
 revoke insert, update, delete on public.parent_consents from anon, authenticated;
+
+revoke execute on function public.set_updated_at() from public, anon, authenticated;
+revoke execute on function public.handle_new_auth_user() from public, anon, authenticated;
 
 commit;
