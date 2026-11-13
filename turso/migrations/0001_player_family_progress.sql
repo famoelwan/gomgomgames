@@ -121,7 +121,10 @@ CREATE TABLE IF NOT EXISTS stage_results (
   stars INTEGER NOT NULL CHECK (stars BETWEEN 1 AND 3),
   achievement_points_awarded INTEGER NOT NULL DEFAULT 0 CHECK (achievement_points_awarded >= 0),
   completed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CHECK ((player_firebase_uid IS NOT NULL) <> (child_profile_id IS NOT NULL))
+  CHECK ((player_firebase_uid IS NOT NULL) <> (child_profile_id IS NOT NULL)),
+  CHECK (player_firebase_uid IS NULL OR player_firebase_uid = owner_firebase_uid),
+  FOREIGN KEY (child_profile_id, owner_firebase_uid)
+    REFERENCES child_profiles(id, owner_firebase_uid) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_stage_results_owner_completed
   ON stage_results(owner_firebase_uid, completed_at DESC);
@@ -136,7 +139,10 @@ CREATE TABLE IF NOT EXISTS reward_ledger (
   reward_type TEXT NOT NULL,
   amount REAL NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CHECK ((player_firebase_uid IS NOT NULL) <> (child_profile_id IS NOT NULL))
+  CHECK ((player_firebase_uid IS NOT NULL) <> (child_profile_id IS NOT NULL)),
+  CHECK (player_firebase_uid IS NULL OR player_firebase_uid = owner_firebase_uid),
+  FOREIGN KEY (child_profile_id, owner_firebase_uid)
+    REFERENCES child_profiles(id, owner_firebase_uid) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS admin_roles (
